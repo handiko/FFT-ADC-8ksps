@@ -35,8 +35,11 @@ void init_OLED(uint8_t oled_address);
 ISR(ADC_vect)
 {
   TIFR1 = (1 << OCF1B);
-  
-  // vReal[0] = ADCH;
+
+  vReal[adc_counter] = ADCH;
+  vImag[adc_counter] = 0;
+
+  adc_counter++;
 
   toggle_led();
 }
@@ -57,14 +60,40 @@ void setup()
 
 void loop()
 {
-  // put your main code here, to run repeatedly:
-  display.clearDisplay();
-  display.setTextColor(WHITE);
-  display.setCursor(0,0);
-  display.print(ADCH);
-  display.display();
+  if (adc_counter == SAMPLES)
+  {
+    /*fix_fft(vReal, vImag, M, false);
 
-  delay(5);
+    display.clearDisplay();
+
+    //double dat;
+
+    for (int i = 0; i < SAMPLES; i++)
+    {
+      display.drawPixel(i, sqrt(pow(vReal[i], 2) + pow(vImag[i], 2)), WHITE);
+    }
+
+    display.display();
+
+    // delay(10);
+
+    adc_counter = 0;*/
+
+    display.clearDisplay();
+
+    display.setCursor(0, 0);
+    display.setTextColor(WHITE);
+    display.setTextSize(2);
+    display.print(int(vReal[0]));
+    display.print(" ");
+    display.print(int(vImag[0]));
+
+    display.display();
+
+    delay(1);
+
+    adc_counter = 0;
+  }
 }
 
 // ---------------------------- DEFINITIONS -------------------//
@@ -111,9 +140,9 @@ void init_timer()
   TCNT1 = 0; // initialize counter value to 0
 
   // set compare match register for 1 Hz increments
-  OCR1A = 1999; // = 16000000 / (256 * 1) - 1 (must be <65536)
+  OCR1A = 15999; // = 16000000 / (256 * 1) - 1 (must be <65536)
 
-  // Set CS12, CS11 and CS10 bits for 64 prescaler
+  // Set CS12, CS11 and CS10 bits for prescaler
   // WGM12 = 1 turn on CTC mode
   TCCR1B |= (0 << CS12) | (0 << CS11) | (1 << CS10) | (1 << WGM12);
 }
